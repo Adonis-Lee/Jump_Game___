@@ -4,9 +4,16 @@ using UnityEngine;
 public class LevelGenerator : MonoBehaviour
 {
     [Header("Gerekli Referanslar")]
-    public GameObject platformPrefab;
-    public GameObject wallPrefab;
+    [Tooltip("6 basamak görseli - spawn sırasında rastgele biri seçilir")]
+    public GameObject[] platformPrefabs;
     public Transform player;
+
+    [Header("Duvar Prefabları (Sol/Sağ farklı görünüm)")]
+    public GameObject wallLeftPrefab;
+    public GameObject wallRightPrefab;
+
+    [Header("Background")]
+    public GameObject backgroundPrefab;
 
     [Header("Spawn Ayarları")]
     public int initialSpawnCount = 10;
@@ -25,17 +32,36 @@ public class LevelGenerator : MonoBehaviour
     public float minHeight = 0.2f;
     public float maxHeight = 1.0f;
 
-    [Header("Duvar Ayarları")]
+    [Header("Duvar Ayarları (Scale bizim ayar)")]
+    [Tooltip("Sol duvar merkezinin X pozisyonu.")]
     public float wallLeftX = -5f;
+    [Tooltip("Sağ duvar merkezinin X pozisyonu.")]
     public float wallRightX = 5f;
+    [Tooltip("Duvar segmenti scale X (eni/kalınlık).")]
+    public float wallSegmentWidth = 1f;
+    [Tooltip("Duvar segmenti scale Y (boyu).")]
     public float wallSegmentHeight = 25f;
-    public float wallThickness = 1f;
+    [Tooltip("İki duvar cismi arasındaki fark: 0=bitişik, + = boşluk, - = örtüşme.")]
+    public float wallSpacingBetweenSegments = 0f;
     public float wallSpawnBuffer = 5f;
+
+    [Header("Background Ayarları (Scale bizim ayar)")]
+    [Tooltip("Arka plan segmenti scale X (eni).")]
+    public float backgroundSegmentWidth = 4.5f;
+    [Tooltip("Arka plan segmenti scale Y (boyu).")]
+    public float backgroundSegmentHeight = 21.4f;
+    [Tooltip("İki arka plan cismi arasındaki fark: 0=bitişik, + = arada boşluk, - = örtüşme.")]
+    public float backgroundSpacingBetweenSegments = 0f;
+    [Tooltip("Arka plan merkezinin X pozisyonu.")]
+    public float backgroundCenterX = 0f;
+    public float backgroundSpawnBuffer = 5f;
 
     private Vector3 nextSpawnPosition;
     private List<GameObject> activePlatforms = new List<GameObject>();
     private float nextWallY = -2f;
     private List<GameObject> activeWalls = new List<GameObject>();
+    private float nextBackgroundY = -2f;
+    private List<GameObject> activeBackgrounds = new List<GameObject>();
     private static PhysicsMaterial2D frictionlessMaterial;
 
     void Awake()
@@ -53,7 +79,8 @@ public class LevelGenerator : MonoBehaviour
             SpawnPlatform();
         }
 
-        if (wallPrefab != null) SpawnWallSegment();
+        if (wallLeftPrefab != null || wallRightPrefab != null) SpawnWallSegment();
+        if (backgroundPrefab != null) SpawnBackgroundSegment();
     }
 
     void Update()
@@ -63,23 +90,27 @@ public class LevelGenerator : MonoBehaviour
             SpawnPlatform();
         }
 
-        if (wallPrefab != null && player.position.y + wallSpawnBuffer > nextWallY)
-        {
+        if ((wallLeftPrefab != null || wallRightPrefab != null) && player.position.y + wallSpawnBuffer > nextWallY)
             SpawnWallSegment();
-        }
+
+        if (backgroundPrefab != null && player.position.y + backgroundSpawnBuffer > nextBackgroundY)
+            SpawnBackgroundSegment();
 
         RemoveOldPlatforms();
         RemoveOldWalls();
+        RemoveOldBackgrounds();
     }
 
     void SpawnPlatform()
     {
-        // 1. Rastgele X konumu
+        if (platformPrefabs == null || platformPrefabs.Length == 0) return;
+
         float randomX = Random.Range(minX, maxX);
         Vector3 spawnPos = new Vector3(randomX, nextSpawnPosition.y, 0);
 
-        // 2. Oluştur
-        GameObject newPlatform = Instantiate(platformPrefab, spawnPos, Quaternion.identity);
+        GameObject prefab = platformPrefabs[Random.Range(0, platformPrefabs.Length)];
+        if (prefab == null) return;
+        GameObject newPlatform = Instantiate(prefab, spawnPos, Quaternion.identity);
 
         // 3. Rastgele Genişlik (X) VE Rastgele Yükseklik (Y) ayarla
         float randomWidth = Random.Range(minWidth, maxWidth);
@@ -112,20 +143,25 @@ public class LevelGenerator : MonoBehaviour
     void SpawnWallSegment()
     {
         float centerY = nextWallY + wallSegmentHeight * 0.5f;
+        Vector3 scale = new Vector3(wallSegmentWidth, wallSegmentHeight, 1f);
 
-        Vector3 leftPos = new Vector3(wallLeftX, centerY, 0);
-        GameObject leftWall = Instantiate(wallPrefab, leftPos, Quaternion.identity);
-        leftWall.transform.localScale = new Vector3(wallThickness, wallSegmentHeight, 1f);
-        ApplyFrictionlessMaterial(leftWall);
-        activeWalls.Add(leftWall);
+        if (wallLeftPrefab != null)
+        {
+            GameObject leftWall = Instantiate(wallLeftPrefab, new Vector3(wallLeftX, centerY, 0f), Quaternion.identity);
+            leftWall.transform.localScale = scale;
+            ApplyFrictionlessMaterial(leftWall);
+            activeWalls.Add(leftWall);
+        }
 
-        Vector3 rightPos = new Vector3(wallRightX, centerY, 0);
-        GameObject rightWall = Instantiate(wallPrefab, rightPos, Quaternion.identity);
-        rightWall.transform.localScale = new Vector3(wallThickness, wallSegmentHeight, 1f);
-        ApplyFrictionlessMaterial(rightWall);
-        activeWalls.Add(rightWall);
+        if (wallRightPrefab != null)
+        {
+            GameObject rightWall = Instantiate(wallRightPrefab, new Vector3(wallRightX, centerY, 0f), Quaternion.identity);
+            rightWall.transform.localScale = scale;
+            ApplyFrictionlessMaterial(rightWall);
+            activeWalls.Add(rightWall);
+        }
 
-        nextWallY += wallSegmentHeight;
+        nextWallY += wallSegmentHeight + wallSpacingBetweenSegments;
     }
 
     void ApplyFrictionlessMaterial(GameObject wall)
@@ -136,13 +172,36 @@ public class LevelGenerator : MonoBehaviour
 
     void RemoveOldWalls()
     {
-        float removeThreshold = wallSegmentHeight + 10f;
+        float removeThreshold = Mathf.Abs(wallSegmentHeight + wallSpacingBetweenSegments) + 10f;
         for (int i = activeWalls.Count - 1; i >= 0; i--)
         {
             if (player.position.y - activeWalls[i].transform.position.y > removeThreshold)
             {
                 Destroy(activeWalls[i]);
                 activeWalls.RemoveAt(i);
+            }
+        }
+    }
+
+    void SpawnBackgroundSegment()
+    {
+        float centerY = nextBackgroundY + backgroundSegmentHeight * 0.5f;
+        Vector3 pos = new Vector3(backgroundCenterX, centerY, 0f);
+        GameObject segment = Instantiate(backgroundPrefab, pos, Quaternion.identity);
+        segment.transform.localScale = new Vector3(backgroundSegmentWidth, backgroundSegmentHeight, 1f);
+        activeBackgrounds.Add(segment);
+        nextBackgroundY += backgroundSegmentHeight + backgroundSpacingBetweenSegments;
+    }
+
+    void RemoveOldBackgrounds()
+    {
+        float removeThreshold = Mathf.Abs(backgroundSegmentHeight + backgroundSpacingBetweenSegments) + 10f;
+        for (int i = activeBackgrounds.Count - 1; i >= 0; i--)
+        {
+            if (player.position.y - activeBackgrounds[i].transform.position.y > removeThreshold)
+            {
+                Destroy(activeBackgrounds[i]);
+                activeBackgrounds.RemoveAt(i);
             }
         }
     }
