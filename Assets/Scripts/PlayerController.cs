@@ -40,9 +40,32 @@ public class PlayerController : MonoBehaviour
     [Header("UI")]
     public GameObject gameOverPanel;
 
+    [Header("Karakter")]
+    public CharacterDatabase characterDatabase;
+
+    private SpriteRenderer spriteRenderer;
+
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+        spriteRenderer = GetComponent<SpriteRenderer>();
+
+        ApplySelectedCharacter();
+    }
+
+    void ApplySelectedCharacter()
+    {
+        if (characterDatabase == null || spriteRenderer == null)
+            return;
+
+        CharacterData selected = characterDatabase.GetSelectedCharacter();
+        if (selected == null)
+            return;
+
+        if (selected.characterSprite != null)
+            spriteRenderer.sprite = selected.characterSprite;
+
+        spriteRenderer.color = selected.characterColor;
     }
 
     void Update()

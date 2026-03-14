@@ -7,11 +7,16 @@ public class MainMenu : MonoBehaviour
     [Tooltip("Options butonuna basılınca açılacak ses ayarları paneli")]
     public GameObject optionsPanel;
 
+    [Tooltip("Characters butonuna basılınca açılacak karakter seçim paneli")]
+    public GameObject charactersPanel;
+
     void Start()
     {
-        // Oyun başladığında panel kapalı olsun
+        // Oyun başladığında paneller kapalı olsun
         if (optionsPanel != null)
             optionsPanel.SetActive(false);
+        if (charactersPanel != null)
+            charactersPanel.SetActive(false);
     }
 
     public void Play()
@@ -31,6 +36,20 @@ public class MainMenu : MonoBehaviour
     {
         if (optionsPanel != null)
             optionsPanel.SetActive(false);
+    }
+
+    /// <summary>Characters butonuna tıklanınca çağrılır.</summary>
+    public void OpenCharacters()
+    {
+        if (charactersPanel != null)
+            charactersPanel.SetActive(true);
+    }
+
+    /// <summary>Karakter panelini kapatır.</summary>
+    public void CloseCharacters()
+    {
+        if (charactersPanel != null)
+            charactersPanel.SetActive(false);
     }
 
     public void Quit()
