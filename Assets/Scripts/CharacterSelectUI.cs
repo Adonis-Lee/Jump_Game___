@@ -100,7 +100,7 @@ public class CharacterSelectUI : MonoBehaviour
             if (!isUnlocked)
             {
                 unlockRequirementText.gameObject.SetActive(true);
-                unlockRequirementText.text = $"{character.unlockScore} Skor Gerekli";
+                unlockRequirementText.text = $"{character.unlockScore} Score Required";
             }
             else
             {
@@ -115,19 +115,19 @@ public class CharacterSelectUI : MonoBehaviour
             {
                 selectButton.interactable = false;
                 if (selectButtonText != null)
-                    selectButtonText.text = "Kilitli";
+                    selectButtonText.text = "Locked";
             }
             else if (currentIndex == selectedIndex)
             {
                 selectButton.interactable = false;
                 if (selectButtonText != null)
-                    selectButtonText.text = "Secili";
+                    selectButtonText.text = "Selected";
             }
             else
             {
                 selectButton.interactable = true;
                 if (selectButtonText != null)
-                    selectButtonText.text = "Sec";
+                    selectButtonText.text = "Select";
             }
         }
 
