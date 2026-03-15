@@ -55,6 +55,12 @@ public class LevelGenerator : MonoBehaviour
     [Tooltip("Arka plan merkezinin X pozisyonu.")]
     public float backgroundCenterX = 0f;
     public float backgroundSpawnBuffer = 5f;
+    [Header("Başlangıç Y Koordinatı")]
+    [Tooltip("Arkaplan, duvar ve platformların Y ekseninde nereden çizilmeye başlayacağı")]
+    public float startYPosition = -2f;
+    [Header("Platform Başlangıç Y Koordinatı")]
+    [Tooltip("İlk platformun (beyaz kutunun) Y ekseninde nereden üretilmeye başlayacağı")]
+    public float platformStartY = 0f; 
 
     private Vector3 nextSpawnPosition;
     private List<GameObject> activePlatforms = new List<GameObject>();
@@ -72,7 +78,12 @@ public class LevelGenerator : MonoBehaviour
 
     void Start()
     {
-        nextSpawnPosition = new Vector3(0, -2f, 0);
+        // Platformlar bizim yeni belirlediğimiz platformStartY noktasından başlasın
+        nextSpawnPosition = new Vector3(0, platformStartY, 0);
+
+        // Duvarlar ve arka plan o aşağı çektiğimiz startYPosition noktasından başlasın
+        nextWallY = startYPosition;
+        nextBackgroundY = startYPosition;
 
         for (int i = 0; i < initialSpawnCount; i++)
         {
@@ -117,7 +128,7 @@ public class LevelGenerator : MonoBehaviour
         float randomHeight = Random.Range(minHeight, maxHeight); // Yeni eklenen kısım
 
         // Z ekseni 2D oyunda genelde 1 kalır, X ve Y değişti
-        newPlatform.transform.localScale = new Vector3(randomWidth, randomHeight, 1f);
+        //newPlatform.transform.localScale = new Vector3(randomWidth, randomHeight, 1f);
 
         // 4. Listeye ekle
         activePlatforms.Add(newPlatform);
@@ -148,7 +159,7 @@ public class LevelGenerator : MonoBehaviour
         if (wallLeftPrefab != null)
         {
             GameObject leftWall = Instantiate(wallLeftPrefab, new Vector3(wallLeftX, centerY, 0f), Quaternion.identity);
-            leftWall.transform.localScale = scale;
+            //leftWall.transform.localScale = scale;
             ApplyFrictionlessMaterial(leftWall);
             activeWalls.Add(leftWall);
         }
@@ -156,7 +167,7 @@ public class LevelGenerator : MonoBehaviour
         if (wallRightPrefab != null)
         {
             GameObject rightWall = Instantiate(wallRightPrefab, new Vector3(wallRightX, centerY, 0f), Quaternion.identity);
-            rightWall.transform.localScale = scale;
+            //rightWall.transform.localScale = scale;
             ApplyFrictionlessMaterial(rightWall);
             activeWalls.Add(rightWall);
         }
@@ -188,7 +199,7 @@ public class LevelGenerator : MonoBehaviour
         float centerY = nextBackgroundY + backgroundSegmentHeight * 0.5f;
         Vector3 pos = new Vector3(backgroundCenterX, centerY, 0f);
         GameObject segment = Instantiate(backgroundPrefab, pos, Quaternion.identity);
-        segment.transform.localScale = new Vector3(backgroundSegmentWidth, backgroundSegmentHeight, 1f);
+        //segment.transform.localScale = new Vector3(backgroundSegmentWidth, backgroundSegmentHeight, 1f);
         activeBackgrounds.Add(segment);
         nextBackgroundY += backgroundSegmentHeight + backgroundSpacingBetweenSegments;
     }
